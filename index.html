@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script type="text/javascript" src="./jquery-1.8.3.js"></script>
+    <style>
+      
+    </style>
+    <script type="text/javascript">
+      $(function() {
+          $('#log').hide();
+          var con = new Control(document);
+      });
+        
+      function getIntFromcharCode(event) {
+          return parseInt(String.fromCharCode(event.charCode));
+      };
+
+      function log(msg) {
+        $('#log').append("<div>" + msg + "</div>");
+      };
+
+      function randomOrder(upto) {
+        var toAdd = []
+        for(var i = 0; i < upto; i++){
+          toAdd.push(i);
+        }
+        var result = []
+        while(toAdd.length > 0) {
+          var idx = parseInt(Math.random()*toAdd.length);
+          result.push(toAdd[idx]);
+          toAdd = toAdd.slice(0,idx).concat(toAdd.slice(idx+1));
+        }
+        return result;
+      };
+      
+      function Control(doc) {
+        var scores =  []; 
+        var originalityPreference =  0;
+        var originalityWeight = 0;
+        var questionOrder =  [];
+        var babyname = '';
+        var originality = null;
+        
+        var initialState = function(event) {
+            var num = getIntFromcharCode(event);
+            if(!isNaN(num)){
+              log("Key pressed " + num );
+              originalityPreference = num;
+              state = boyOrGirl;
+              $('#prompt').html('Boy (B) or Girl (G)?');
+  //            log("Getting baby names");
+  //            CORS is preventing us from pulling html from a different domain in chrome
+  //            See http://blog.mycila.com/2011/07/jquery-cors-plugin.html and a whole load of posts on SO
+  //            $.support.cors = true
+  //            $.get('http://www.babycenter.com/top-baby-names-2012', dataReceived, 'jsonp');
+            }
+        }
+        
+        var state = initialState;
+        
+        var boyOrGirl = function(event){
+          var key = String.fromCharCode(event.charCode).toUpperCase();
+          switch(key){
+            case 'B':
+              names = boys;
+              break;
+            case 'G':
+              names = girls;
+              break;
+            default:
+              log('Unexpected: ' + key);
+          }
+          $('#prompt').html('For each of the following names rate them 1 - 9. (Press any key to continue).');
+          originalityWeight = 9.0/names.length;
+          questionOrder = randomOrder(names.length);
+          state = checkingNames;
+        }
+
+        var checkingNames = function(event) {
+          log("Checking names");
+          var score =  getIntFromcharCode(event);
+          if(originality != null){
+            scores.push({ 
+              name: babyname, 
+              score: (originalityPreference * originality) + ((1-originalityPreference) * score)
+            })
+          }        
+          if(questionOrder.length > 0) {
+            var idx = questionOrder.pop();
+            originality = idx * originalityWeight;
+            babyname = names[idx];
+            var total = names.length;
+            $('#prompt').html(babyname + '(' + (total - questionOrder.length) + '/' + total + ')' );
+              
+          } else {
+            scores.sort(function(a,b) { return a.score < b.score; } );
+            $('#prompt').html('<div>You have chosen</div><ol>');
+            $.each(scores.slice(0,3), function(n,i) {
+              $('#prompt').append('<li>'+ i.name + ' with a score of ' + i.score);
+            });
+            $('#prompt').append('</ol>');
+          }
+        }
+       
+        doc.addEventListener('keypress', function(event) {
+         state(event);
+        });
+
+        var girls = ['Sophia', 'Emma', 'Olivia', 'Isabella', 'Ava', 'Lily', 'Zoe', 'Chloe', 'Mia', 'Madison', 'Emily', 'Ella', 'Madelyn', 'Abigail', 'Aubrey', 'Addison', 'Avery', 'Layla', 'Hailey', 'Amelia', 'Hannah', 'Charlotte', 'Kaitlyn', 'Harper', 'Kaylee', 'Sophie', 'Mackenzie', 'Peyton', 'Riley', 'Grace', 'Brooklyn', 'Sarah', 'Aaliyah', 'Anna', 'Arianna', 'Ellie', 'Natalie', 'Isabelle', 'Lillian', 'Evelyn', 'Elizabeth', 'Lyla', 'Lucy', 'Claire', 'Makayla', 'Kylie', 'Audrey', 'Maya', 'Leah', 'Gabriella', 'Annabelle', 'Savannah', 'Nora', 'Reagan', 'Scarlett', 'Samantha', 'Alyssa', 'Allison', 'Elena', 'Stella', 'Alexis', 'Victoria', 'Aria', 'Molly', 'Maria', 'Bailey', 'Sydney', 'Bella', 'Mila', 'Taylor', 'Kayla', 'Eva', 'Jasmine', 'Gianna', 'Alexandra', 'Julia', 'Eliana', 'Kennedy', 'Brianna', 'Ruby', 'Lauren', 'Alice', 'Violet', 'Kendall', 'Morgan', 'Caroline', 'Piper', 'Brooke', 'Elise', 'Alexa', 'Sienna', 'Reese', 'Clara', 'Paige', 'Kate', 'Nevaeh', 'Sadie', 'Quinn', 'Isla', 'Eleanor'];
+        
+        var boys = [ 'Aiden', 'Jackson', 'Ethan', 'Liam', 'Mason'];//, 'Noah', 'Lucas', 'Jacob', 'Jayden', 'Jack', 'Logan', 'Ryan', 'Caleb', 'Benjamin', 'William', 'Michael', 'Alexander', 'Elijah', 'Matthew', 'Dylan', 'James', 'Owen', 'Connor', 'Brayden', 'Carter', 'Landon', 'Joshua', 'Luke', 'Daniel', 'Gabriel', 'Nicholas', 'Nathan', 'Oliver', 'Henry', 'Andrew', 'Gavin', 'Cameron', 'Eli', 'Max', 'Isaac', 'Evan', 'Samuel', 'Grayson', 'Tyler', 'Zachary', 'Wyatt', 'Joseph', 'Charlie', 'Hunter', 'David', 'Anthony', 'Christian', 'Colton', 'Thomas', 'Dominic', 'Austin', 'John', 'Sebastian', 'Cooper', 'Levi', 'Parker', 'Isaiah', 'Chase', 'Blake', 'Aaron', 'Alex', 'Adam', 'Tristan', 'Julian', 'Jonathan', 'Christopher', 'Jace', 'Nolan', 'Miles', 'Jordan', 'Carson', 'Colin', 'Ian', 'Riley', 'Xavier', 'Hudson', 'Adrian', 'Cole', 'Brody', 'Leo', 'Jake', 'Bentley', 'Sean', 'Jeremiah', 'Asher', 'Nathaniel', 'Micah', 'Jason', 'Ryder', 'Declan', 'Hayden', 'Brandon', 'Easton', 'Lincoln', 'Harrison '];
+        }
+    </script>
+  <head> 
+  <body>
+    <div id="prompt">Press 1-9, 1 to rate choice highest, 9 to rate originality highest </div>
+    <div id="log"> </div>
+  <body>
+</html>
